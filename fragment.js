@@ -123,19 +123,34 @@ class Fragment {
      */
     static plug(method, plugin) {
         let self = this;
+        let orig = this.prototype[method];
 
-        if (this.__plugins[method] == undefined) {
-            let orig = this.prototype[method];
+        if (this.prototype[method] === undefined) {
+            Object.defineProperty(this.prototype, method, {
+                value: plugin,
+            });
+            return;
+        }
 
-            this.__plugins[method] = [
-                function(i, ...args) {
-                    return orig.apply(this, args);
+        if (!this.hasOwnProperty("__plugins")) {
+            this.__plugins = [];
+        }
+
+        if (this.__plugins[method] === undefined) {
+            this.__plugins[method] = [];
+
+            this.__plugins[method].push(function(i, ...args) {
+                return orig.apply(this, args);
+            });
+
+            Object.defineProperty(this.prototype, method, {
+                value: function() {
+                    return self.__plugins[method][0].apply(this, [
+                        0,
+                        ...arguments,
+                    ]);
                 },
-            ];
-
-            this.prototype[method] = function() {
-                return self.__plugins[method][0].apply(this, [0, ...arguments]);
-            };
+            });
         }
 
         this.__plugins[method].unshift(function(i, ...args) {
@@ -151,11 +166,17 @@ class Fragment {
         });
     }
 
+    /**
+     * Unplug method
+     *
+     * @param {string} method
+     * @param {function} plugin
+     */
     static unplug(method, plugin) {
-        delete this.__plugins[method][
-            this.__plugins[method].findIndex(func => func == plugin)
-        ];
+        if (this.__plugins && this.__plugins[method]) {
+            delete this.__plugins[method][
+                this.__plugins[method].findIndex(func => func == plugin)
+            ];
+        }
     }
 }
-
-Fragment.__plugins = {};
