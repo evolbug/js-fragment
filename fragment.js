@@ -1,3 +1,8 @@
+/**
+ * @copyright Daniels Kursits (evolbug), 2019 <https://github.com/evolbug>
+ * @license MIT license <https://opensource.org/licenses/MIT>
+ */
+
 const { render, html, svg } = lighterhtml;
 
 class Fragment {
